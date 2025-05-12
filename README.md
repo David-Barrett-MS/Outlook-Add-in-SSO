@@ -1,1 +1,5 @@
 # Outlook-Add-in-SSO
+
+Shows how to make Graph calls from an Outlook add-in using SSO.  Client-side code only (no server besides static web server required), and no frameworks such as Node.  Code adapted from other Microsoft add-in samples.
+
+To use, host the files (under www) on a suitable web server and update the references in the [app manifest](https://github.com/David-Barrett-MS/Outlook-Add-in-SSO/blob/main/www/Outlook%20SSO%20Add-in.xml) to point to that server.  You'll also need to [register an application in EntraID](https://learn.microsoft.com/en-gb/office/dev/add-ins/develop/enable-nested-app-authentication-in-your-add-in#register-your-single-page-application) and update the [applicationId in authConfig.js](https://github.com/David-Barrett-MS/Outlook-Add-in-SSO/blob/main/www/authConfig.js#L9) to your own.  Once done, install the add-in using your updated manifest.
