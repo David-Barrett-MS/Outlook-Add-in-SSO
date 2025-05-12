@@ -39,19 +39,27 @@ Office.onReady((info) => {
 function applyOfficeTheme() {
   // Identify the current Office theme in use.
   const currentOfficeTheme = Office.context.officeTheme.themeId;
+
+  if (currentOfficeTheme === undefined) {
+    console.log("No Office theme detected.");
+    const taskPaneBackgroundColour = window.getComputedStyle(appBody).backgroundColor;
+    console.log("Body background color: " + taskPaneBackgroundColour);
+    if (taskPaneBackgroundColour == "rgba(0, 0, 0, 0)") {
+      // Catches dark mode on Outlook Mac (crude hack, probably easily breakable)
+      console.log("Setting foreground colour to white");
+      document.body.style.color = "#FFFFFF";
+    }
+    return;
+  }
   console.log("Current Office theme: " + currentOfficeTheme);
 
-  if (!Office.context.officeTheme.isDarkTheme) {
-      console.log("No changes required.");
-  }
-
-  console.log("Applying Office theme...");
   // Get the colors of the current Office theme.
   const bodyBackgroundColor = Office.context.officeTheme.bodyBackgroundColor;
   const bodyForegroundColor = Office.context.officeTheme.bodyForegroundColor;
   const controlBackgroundColor = Office.context.officeTheme.controlBackgroundColor;
   const controlForegroundColor = Office.context.officeTheme.controlForegroundColor;
 
+  console.log("Applying Office theme...");
   document.body.style.backgroundColor = bodyBackgroundColor;
   document.body.style.color = bodyForegroundColor;
 
