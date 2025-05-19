@@ -6,7 +6,7 @@ The Graph calls require [an application registration](https://learn.microsoft.co
 
 ## Running from this repository
 
-This repository is Github Pages enabled, so the add-in can be served directly.  To use the add-in directly, you'll need to configure the application registration with a redirect URL of brk-multihub://david-barrett-ms.github.io/Outlook-Add-in-SSO (as that is where the add-in is hosted).  You can install the add-in using [the manifest that targets Github pages](https://github.com/David-Barrett-MS/Outlook-Add-in-SSO/blob/main/www/Outlook%20SSO%20Add-in%20Github.xml).
+This repository is Github Pages enabled, so the add-in can be served directly.  To use the add-in directly, you'll need to configure the application registration with a redirect URL of *brk-multihub://david-barrett-ms.github.io* (as that is where the add-in is hosted).  You can install the add-in using [the manifest that targets Github pages](https://github.com/David-Barrett-MS/Outlook-Add-in-SSO/blob/main/www/Outlook%20SSO%20Add-in%20Github.xml).
 
 ## Serving from your own server
 
