@@ -55,11 +55,23 @@ Office.onReady((info) => {
       tenantIdElement.value = tenantId;
       tenantIdElement.onchange = updateTenantId;
     }
-    console.log("Initializing account manager...");
-    accountManager.initialize(applicationId, tenantId);
+
+    initialiseAccountManager();
+
     applyOfficeTheme();
   }
 });
+
+function initialiseAccountManager() {
+  addinSettings = Office.context.roamingSettings;
+  tenantId = addinSettings.get("tenantId");
+  applicationId = addinSettings.get("applicationId");
+
+  console.log("Initializing account manager...");
+  console.log("Application ID: " + applicationId);
+  console.log("Tenant ID: " + tenantId);
+  accountManager.initialize(applicationId, tenantId);
+}
 
 function applyOfficeTheme() {
   // Identify the current Office theme in use.
@@ -67,13 +79,6 @@ function applyOfficeTheme() {
 
   if (currentOfficeTheme === undefined) {
     console.log("No Office theme detected.");
-    const taskPaneBackgroundColour = window.getComputedStyle(appBody).backgroundColor;
-    console.log("Body background color: " + taskPaneBackgroundColour);
-    if (taskPaneBackgroundColour == "rgba(0, 0, 0, 0)") {
-      // Catches dark mode on Outlook Mac (crude hack, probably easily breakable)
-      console.log("Setting foreground colour to white");
-      document.body.style.color = "#FFFFFF";
-    }
     return;
   }
   console.log("Current Office theme: " + currentOfficeTheme);
@@ -93,6 +98,7 @@ async function updateTenantId() {
   addinSettings.set("tenantId", newTenantId);
   await addinSettings.saveAsync();
   console.log("Tenant ID saved.");
+  initialiseAccountManager();
 }
 
 async function updateApplicationId() {
@@ -101,6 +107,7 @@ async function updateApplicationId() {
   addinSettings.set("applicationId", newApplicationId);
   await addinSettings.saveAsync();
   console.log("Application ID saved.");
+  initialiseAccountManager();
 }
 
 /**
