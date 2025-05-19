@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0" xsi:type="MailApp">
-  <Id>8939596e-a800-4de7-9b87-ea8058657378</Id>
-  <Version>1.0.0.1</Version>
+  <Id>cf684e53-4d91-403a-af4d-f0ce721ff16c</Id>
+  <Version>1.0.0.0</Version>
   <ProviderName>Contoso</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Outlook Add-in SSO Sample using NAA"/>
-  <Description DefaultValue="Demonstrates obtaining a token and making Graph calls from an Outlook add-in."/>
-  <IconUrl DefaultValue="https://apps1.daves.tips/assets/icon-64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://apps1.daves.tips/assets/icon-128.png"/>
+  <Description DefaultValue="Demonstrates obtaining a token and making Graph calls from an Outlook add-in.  Tenant Id and App Id can be configured from Taskpane."/>
+  <IconUrl DefaultValue="https://david-barrett-ms.github.io/Outlook-Add-in-SSO/www/assets/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://david-barrett-ms.github.io/Outlook-Add-in-SSO/www/assets/icon-128.png"/>
   <SupportUrl DefaultValue="https://www.contoso.com/help"/>
   <AppDomains>
-    <AppDomain>https://apps1.daves.tips</AppDomain>
+    <AppDomain>https://david-barrett-ms.github.io/Outlook-Add-in-SSO/</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Mailbox"/>
@@ -23,7 +23,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://apps1.daves.tips/NAASample/taskpane.html"/>
+        <SourceLocation DefaultValue="https://david-barrett-ms.github.io/Outlook-Add-in-SSO/www/taskpane.html"/>
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -91,12 +91,12 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://apps1.daves.tips/assets/icon-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://apps1.daves.tips/assets/icon-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://apps1.daves.tips/assets/icon-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://david-barrett-ms.github.io/Outlook-Add-in-SSO/www/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://david-barrett-ms.github.io/Outlook-Add-in-SSO/www/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://david-barrett-ms.github.io/Outlook-Add-in-SSO/www/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://apps1.daves.tips/NAASample/taskpane.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://david-barrett-ms.github.io/Outlook-Add-in-SSO/www/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GroupLabel" DefaultValue="Contoso Add-in"/>

@@ -11,28 +11,53 @@ const sideloadMsg = document.getElementById("sideload-msg");
 const appBody = document.getElementById("app-body");
 const getUserDataButton = document.getElementById("getUserData");
 const getUserFilesButton = document.getElementById("getUserFiles");
-const userName = document.getElementById("userName");
-const userEmail = document.getElementById("userEmail");
+const tenantIdElement = document.getElementById("entraTenantId");
+const appIdElement = document.getElementById("entraAppId");
+
+/**
+ * The add-in settings object.
+ * @type {Office.RoamingSettings}
+ */
+let addinSettings;
+let tenantId;
+let applicationId;
 
 Office.onReady((info) => {
-  switch (info.host) {
-    case Office.HostType.Outlook:
-      if (sideloadMsg) {
-        sideloadMsg.style.display = "none";
-      }
-      if (appBody) {
-        appBody.style.display = "flex";
-      }
-      if (getUserDataButton) {
-        getUserDataButton.onclick = getUserData;
-      }
-      if (getUserFilesButton) {
-        getUserFilesButton.onclick = getUserFiles;
-      }
-      console.log("Initializing account manager...");
-      accountManager.initialize();
-      applyOfficeTheme();
-      break;
+  if (info.host == Office.HostType.Outlook) {
+    if (sideloadMsg) {
+      sideloadMsg.style.display = "none";
+    }
+    if (appBody) {
+      appBody.style.display = "flex";
+    }
+    if (getUserDataButton) {
+      getUserDataButton.onclick = getUserData;
+    }
+    if (getUserFilesButton) {
+      getUserFilesButton.onclick = getUserFiles;
+    }
+
+
+    // Initialize the roaming settings object and retrieve client information.
+    addinSettings = Office.context.roamingSettings;
+    tenantId = addinSettings.get("tenantId");
+    applicationId = addinSettings.get("applicationId");
+
+    // Write the application information to the TaskPane and console.
+    console.log("Application ID: " + applicationId);
+    console.log("Tenant ID: " + tenantId);
+    const appIdElement = document.getElementById("entraAppId");
+    if (appIdElement) {
+      appIdElement.value = applicationId;
+      appIdElement.onchange = updateApplicationId;
+    }
+    if (tenantIdElement) {
+      tenantIdElement.value = tenantId;
+      tenantIdElement.onchange = updateTenantId;
+    }
+    console.log("Initializing account manager...");
+    accountManager.initialize(applicationId, tenantId);
+    applyOfficeTheme();
   }
 });
 
@@ -53,19 +78,29 @@ function applyOfficeTheme() {
   }
   console.log("Current Office theme: " + currentOfficeTheme);
 
-  // Get the colors of the current Office theme.
-  const bodyBackgroundColor = Office.context.officeTheme.bodyBackgroundColor;
-  const bodyForegroundColor = Office.context.officeTheme.bodyForegroundColor;
-  const controlBackgroundColor = Office.context.officeTheme.controlBackgroundColor;
-  const controlForegroundColor = Office.context.officeTheme.controlForegroundColor;
-
   console.log("Applying Office theme...");
-  document.body.style.backgroundColor = bodyBackgroundColor;
-  document.body.style.color = bodyForegroundColor;
+  document.body.style.backgroundColor = Office.context.officeTheme.bodyBackgroundColor;
+  document.body.style.color = Office.context.officeTheme.bodyForegroundColor;
 
   if (Office.context.officeTheme.isDarkTheme) {
     console.log("Dark theme detected.");
   }
+}
+
+async function updateTenantId() {
+  const newTenantId = tenantIdElement.value;
+  console.log("New tenant ID: " + newTenantId);
+  addinSettings.set("tenantId", newTenantId);
+  await addinSettings.saveAsync();
+  console.log("Tenant ID saved.");
+}
+
+async function updateApplicationId() {
+  const newApplicationId = appIdElement.value;
+  console.log("New application ID: " + newApplicationId);
+  addinSettings.set("applicationId", newApplicationId);
+  await addinSettings.saveAsync();
+  console.log("Application ID saved.");
 }
 
 /**

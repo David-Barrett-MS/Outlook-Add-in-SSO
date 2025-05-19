@@ -4,14 +4,13 @@
 /* This file provides MSAL auth configuration to get access token through nested app authentication. */
 
 import "./lib/msal-browser.js";
-export { applicationId, msalConfig, AccountManager };
+export { AccountManager };
 
-const applicationId = "9ccd58e7-ce5f-4cbc-b411-80d9b5195d21";
 
 const msalConfig = {
   auth: {
-    clientId: applicationId,
-    authority: "https://login.microsoftonline.com/77275f64-d6b0-4d6d-b04b-8580417d20a6",
+    clientId: "0",
+    authority: "https://login.microsoftonline.com/",
     supportsNestedAppAuth: true,
   },
 };
@@ -21,8 +20,21 @@ class AccountManager {
   pca = undefined;
 
   // Initialize MSAL public client application.
-  async initialize() {
+  async initialize(EntraApplicationId, EntraTenantId) {
     // Initialize the public client application.
+    if (EntraTenantId !== undefined) {
+      msalConfig.auth.authority = `https://login.microsoftonline.com/${EntraTenantId}`;
+    }
+    else {
+      msalConfig.auth.authority = 'https://login.microsoftonline.com/common';
+    }
+    if (EntraApplicationId !== undefined) {
+      msalConfig.auth.clientId = EntraApplicationId;
+    }
+    else {
+      throw new Error("EntraApplicationId is not defined!");
+    }
+
     try {
       this.pca = await msal.createNestablePublicClientApplication(msalConfig);
     } catch (error) {
