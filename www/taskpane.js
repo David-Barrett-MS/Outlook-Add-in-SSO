@@ -11,6 +11,8 @@ const sideloadMsg = document.getElementById("sideload-msg");
 const appBody = document.getElementById("app-body");
 const getUserDataButton = document.getElementById("getUserData");
 const getUserFilesButton = document.getElementById("getUserFiles");
+const getSharedMailboxMessagesButton = document.getElementById("getSharedMailboxMessages");
+const sharedMailboxAddressElement = document.getElementById("sharedMailboxAddress");
 const tenantIdElement = document.getElementById("entraTenantId");
 const appIdElement = document.getElementById("entraAppId");
 
@@ -35,6 +37,9 @@ Office.onReady((info) => {
     }
     if (getUserFilesButton) {
       getUserFilesButton.onclick = getUserFiles;
+    }
+    if (getSharedMailboxMessagesButton) {
+      getSharedMailboxMessagesButton.onclick = getSharedMailboxMessages;
     }
 
 
@@ -174,4 +179,63 @@ async function getFileNames(count = 10) {
 
   const names = response.value.map(item => item.name);
   return names;
+}
+
+/**
+ * Gets the top 5 messages from a shared mailbox that the signed-in user can access.
+ * Logs message subjects on success, or full HTTP response details on failure.
+ */
+async function getSharedMailboxMessages() {
+  const sharedMailboxAddress = sharedMailboxAddressElement?.value?.trim();
+  if (!sharedMailboxAddress) {
+    console.error("Enter a shared mailbox address before running this test.");
+    return;
+  }
+
+  try {
+    const accessToken = await accountManager.ssoGetToken(["Mail.ReadWrite.Shared"]);
+    const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
+    const query = "?$select=subject&$top=5&$orderby=receivedDateTime desc";
+    const requestUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sharedMailboxAddress)}/messages${query}`;
+
+    const response = await fetch(requestUrl, {
+      headers: {
+        Authorization: authorizationHeader,
+      },
+    });
+
+    if (!response.ok) {
+      await logGraphErrorResponse(response, sharedMailboxAddress);
+      return;
+    }
+
+    const payload = await response.json();
+    const subjects = (payload.value || []).map((item) => item.subject ?? "(no subject)");
+
+    console.log(`Top ${subjects.length} messages from shared mailbox ${sharedMailboxAddress}:`);
+    subjects.forEach((subject, index) => {
+      console.log(`${index + 1}. ${subject}`);
+    });
+  } catch (error) {
+    console.error("Error retrieving shared mailbox messages.", error);
+  }
+}
+
+async function logGraphErrorResponse(response, sharedMailboxAddress) {
+  const headers = {};
+  response.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const body = contentType.includes("application/json")
+    ? await response.json()
+    : await response.text();
+
+  console.error(`Shared mailbox request failed for ${sharedMailboxAddress}.`, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+    body,
+  });
 }

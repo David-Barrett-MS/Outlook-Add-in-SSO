@@ -58,6 +58,16 @@
             <label>OneDrive root folder contents:</label>
             <ul id="fileList"></ul>
         </div>
+        <br>
+        <div class="ms-TextField">
+            <label class="ms-Label">Shared mailbox address</label>
+            <input id="sharedMailboxAddress" class="ms-TextField-field" type="email" value="" placeholder="sharedmailbox@contoso.com">
+        </div>
+        <button class="Button Button--primary" id="getSharedMailboxMessages">
+            <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
+            <span class="Button-label">Get shared mailbox messages</span>
+            <span class="Button-description">Gets the top 5 shared mailbox messages and logs their subjects.</span>
+        </button>
         <h3>Application Registration</h3>
         <div class="ms-TextField">
             <label class="ms-Label">App Id</label>
