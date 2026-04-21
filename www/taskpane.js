@@ -216,6 +216,28 @@ async function getSharedMailboxMessages() {
     subjects.forEach((subject, index) => {
       console.log(`${index + 1}. ${subject}`);
     });
+
+    // Display messages in the TaskPane
+    const sharedMailboxMessagesElement = document.getElementById("sharedMailboxMessages");
+    const messageListElement = document.getElementById("messageList");
+
+    if (sharedMailboxMessagesElement && messageListElement) {
+      messageListElement.innerHTML = ""; // Clear previous list
+
+      if (subjects.length === 0) {
+        const noMessageItem = document.createElement("li");
+        noMessageItem.innerText = "No messages found in this shared mailbox.";
+        messageListElement.appendChild(noMessageItem);
+      } else {
+        subjects.forEach((subject) => {
+          const listItem = document.createElement("li");
+          listItem.innerText = subject;
+          messageListElement.appendChild(listItem);
+        });
+      }
+
+      sharedMailboxMessagesElement.style.visibility = "visible";
+    }
   } catch (error) {
     console.error("Error retrieving shared mailbox messages.", error);
   }
