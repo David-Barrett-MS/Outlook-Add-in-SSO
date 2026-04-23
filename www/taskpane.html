@@ -67,15 +67,23 @@
             <span class="Button-label">Get shared mailbox messages</span>
             <span class="Button-description">Gets the top 5 shared mailbox messages and logs their subjects.</span>
         </button>
+         <div id="sharedMailboxMessages" style="visibility: hidden; width:100%;">
+            <label>Top 5 shared mailbox messages:</label>
+            <ul id="messageList"></ul>
+        </div>
+       <br>
         <button class="Button Button--primary" id="saveDraftAndGetViaGraph">
             <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
             <span class="Button-label">Save draft and get via Graph</span>
             <span class="Button-description">Runs the save draft and Graph retrieval test.</span>
         </button>
-        <div id="sharedMailboxMessages" style="visibility: hidden; width:100%;">
-            <label>Top 5 shared mailbox messages:</label>
-            <ul id="messageList"></ul>
+        <div id="draftGraphResults" style="visibility: hidden; width:100%;">
+            <span><strong>Retries needed:</strong> </span><span id="retriesNeeded"></span><br>
+            <span><strong>Item ID:</strong> </span><span id="resultItemId"></span><br>
+            <span><strong>Subject:</strong> </span><span id="resultItemSubject"></span><br>
         </div>
+        <br>
+
         <br>
         <h3>Application Registration</h3>
         <div class="ms-TextField">

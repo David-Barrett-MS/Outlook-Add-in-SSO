@@ -282,9 +282,22 @@ async function saveDraftAndGetViaGraph() {
 
     const accessToken = await accountManager.ssoGetToken(["Mail.ReadWrite"]);
     const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
-    const message = await getMessageViaGraphWithRetry(graphMessageId, authorizationHeader);
+    const result = await getMessageViaGraphWithRetry(graphMessageId, authorizationHeader);
 
-    console.log("Saved draft retrieved from Graph.", message);
+    console.log("Saved draft retrieved from Graph.", { retriesNeeded: result.retriesNeeded, message: result.message });
+
+    // Display results in the TaskPane
+    const draftGraphResultsElement = document.getElementById("draftGraphResults");
+    const retriesNeededElement = document.getElementById("retriesNeeded");
+    const resultItemIdElement = document.getElementById("resultItemId");
+    const resultItemSubjectElement = document.getElementById("resultItemSubject");
+
+    if (draftGraphResultsElement && retriesNeededElement && resultItemIdElement && resultItemSubjectElement) {
+      retriesNeededElement.innerText = result.retriesNeeded;
+      resultItemIdElement.innerText = result.message.id || "(no id)";
+      resultItemSubjectElement.innerText = result.message.subject || "(no subject)";
+      draftGraphResultsElement.style.visibility = "visible";
+    }
   } catch (error) {
     console.error("Error saving draft and retrieving it via Graph.", error);
   }
@@ -327,7 +340,11 @@ async function getMessageViaGraphWithRetry(messageId, authorizationHeader) {
     });
 
     if (response.ok) {
-      return response.json();
+      const message = await response.json();
+      return {
+        retriesNeeded: attempt - 1,
+        message,
+      };
     }
 
     if (response.status !== 404) {
