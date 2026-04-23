@@ -12,6 +12,7 @@ const appBody = document.getElementById("app-body");
 const getUserDataButton = document.getElementById("getUserData");
 const getUserFilesButton = document.getElementById("getUserFiles");
 const getSharedMailboxMessagesButton = document.getElementById("getSharedMailboxMessages");
+const saveDraftAndGetViaGraphButton = document.getElementById("saveDraftAndGetViaGraph");
 const sharedMailboxAddressElement = document.getElementById("sharedMailboxAddress");
 const tenantIdElement = document.getElementById("entraTenantId");
 const appIdElement = document.getElementById("entraAppId");
@@ -40,6 +41,9 @@ Office.onReady((info) => {
     }
     if (getSharedMailboxMessagesButton) {
       getSharedMailboxMessagesButton.onclick = getSharedMailboxMessages;
+    }
+    if (saveDraftAndGetViaGraphButton) {
+      saveDraftAndGetViaGraphButton.onclick = saveDraftAndGetViaGraph;
     }
 
 
@@ -259,5 +263,123 @@ async function logGraphErrorResponse(response, sharedMailboxAddress) {
     statusText: response.statusText,
     headers,
     body,
+  });
+}
+
+async function saveDraftAndGetViaGraph() {
+  try {
+    const mailboxItem = Office.context.mailbox?.item;
+    if (!mailboxItem || typeof mailboxItem.saveAsync !== "function") {
+      throw new Error("This test requires an Outlook compose item that supports saveAsync.");
+    }
+
+    console.log("Saving current item draft...");
+    const savedItemId = await saveCurrentItemAsync(mailboxItem);
+    console.log("Draft saved.", { savedItemId });
+
+    const graphMessageId = convertItemIdForGraph(savedItemId);
+    console.log("Retrieving saved draft from Graph...", { graphMessageId });
+
+    const accessToken = await accountManager.ssoGetToken(["Mail.ReadWrite"]);
+    const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
+    const message = await getMessageViaGraphWithRetry(graphMessageId, authorizationHeader);
+
+    console.log("Saved draft retrieved from Graph.", message);
+  } catch (error) {
+    console.error("Error saving draft and retrieving it via Graph.", error);
+  }
+}
+
+function saveCurrentItemAsync(mailboxItem) {
+  return new Promise((resolve, reject) => {
+    mailboxItem.saveAsync((result) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        resolve(result.value);
+        return;
+      }
+
+      reject(result.error || new Error("saveAsync failed."));
+    });
+  });
+}
+
+function convertItemIdForGraph(itemId) {
+  const mailbox = Office.context.mailbox;
+  if (mailbox && typeof mailbox.convertToRestId === "function") {
+    return mailbox.convertToRestId(itemId, Office.MailboxEnums.RestVersion.v2_0);
+  }
+
+  return itemId;
+}
+
+async function getMessageViaGraphWithRetry(messageId, authorizationHeader) {
+  const requestUrl = `https://graph.microsoft.com/v1.0/me/messages/${encodeURIComponent(messageId)}`;
+  const startTime = Date.now();
+  let attempt = 0;
+  let lastNotFoundResponse;
+
+  while (Date.now() - startTime <= 20000) {
+    attempt += 1;
+    const response = await fetch(requestUrl, {
+      headers: {
+        Authorization: authorizationHeader,
+      },
+    });
+
+    if (response.ok) {
+      return response.json();
+    }
+
+    if (response.status !== 404) {
+      throw await createGraphResponseError(response, `Graph lookup failed for saved draft on attempt ${attempt}.`);
+    }
+
+    lastNotFoundResponse = await cloneGraphResponseDetails(response, `Saved draft not available in Graph yet on attempt ${attempt}.`);
+    console.warn(lastNotFoundResponse.message, lastNotFoundResponse.details);
+
+    if (Date.now() - startTime > 19000) {
+      break;
+    }
+
+    await delay(2000);
+  }
+
+  const timeoutError = new Error("Saved draft was not available through Graph within 20 seconds.");
+  timeoutError.graphResponse = lastNotFoundResponse?.details;
+  throw timeoutError;
+}
+
+async function createGraphResponseError(response, message) {
+  const details = await cloneGraphResponseDetails(response, message);
+  const error = new Error(message);
+  error.graphResponse = details.details;
+  return error;
+}
+
+async function cloneGraphResponseDetails(response, message) {
+  const headers = {};
+  response.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const body = contentType.includes("application/json")
+    ? await response.json()
+    : await response.text();
+
+  return {
+    message,
+    details: {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+      body,
+    },
+  };
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
   });
 }

@@ -43,12 +43,11 @@
             <span class="Button-label">Get user data</span>
             <span class="Button-description">Gets the user's name and email.</span>
         </button>
-        <br>
         <div id="userData" style="visibility: hidden;">
             <span><strong>Name:</strong> </span><span id="userName"></span><br>
             <span><strong>Email:</strong> </span><span id="userEmail"></span><br>
-            <br>
         </div>
+        <br>
         <button class="Button Button--primary" id="getUserFiles">
             <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
             <span class="Button-label">Get user files</span>
@@ -67,6 +66,11 @@
             <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
             <span class="Button-label">Get shared mailbox messages</span>
             <span class="Button-description">Gets the top 5 shared mailbox messages and logs their subjects.</span>
+        </button>
+        <button class="Button Button--primary" id="saveDraftAndGetViaGraph">
+            <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
+            <span class="Button-label">Save draft and get via Graph</span>
+            <span class="Button-description">Runs the save draft and Graph retrieval test.</span>
         </button>
         <div id="sharedMailboxMessages" style="visibility: hidden; width:100%;">
             <label>Top 5 shared mailbox messages:</label>
