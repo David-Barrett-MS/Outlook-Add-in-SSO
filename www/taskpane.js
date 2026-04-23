@@ -273,10 +273,10 @@ async function saveDraftAndGetViaGraph() {
       throw new Error("This test requires an Outlook compose item that supports saveAsync.");
     }
 
-    const operationStartTime = Date.now();
     console.log("Saving current item draft...");
     const savedItemId = await saveCurrentItemAsync(mailboxItem);
     console.log("Draft saved.", { savedItemId });
+    const operationStartTime = Date.now();
 
     const graphMessageId = convertItemIdForGraph(savedItemId);
     const mailboxContext = await getMailboxContextForGraph(mailboxItem);
@@ -418,10 +418,6 @@ async function getMessageViaGraphWithRetry(messageId, authorizationHeader, mailb
 
     lastNotFoundResponse = await cloneGraphResponseDetails(response, `Saved draft not available in Graph yet on attempt ${attempt}.`);
     console.warn(lastNotFoundResponse.message, lastNotFoundResponse.details);
-
-    if (Date.now() - startTime > 19000) {
-      break;
-    }
 
     await delay(2000);
   }
