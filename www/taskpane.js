@@ -273,27 +273,41 @@ async function saveDraftAndGetViaGraph() {
       throw new Error("This test requires an Outlook compose item that supports saveAsync.");
     }
 
+    const operationStartTime = Date.now();
     console.log("Saving current item draft...");
     const savedItemId = await saveCurrentItemAsync(mailboxItem);
     console.log("Draft saved.", { savedItemId });
 
     const graphMessageId = convertItemIdForGraph(savedItemId);
-    console.log("Retrieving saved draft from Graph...", { graphMessageId });
+    const mailboxContext = await getMailboxContextForGraph(mailboxItem);
+    console.log("Retrieving saved draft from Graph...", {
+      graphMessageId,
+      isSharedMailbox: mailboxContext.isShared,
+      mailboxAddress: mailboxContext.mailboxAddress,
+    });
 
-    const accessToken = await accountManager.ssoGetToken(["Mail.ReadWrite"]);
+    const scopes = mailboxContext.isShared ? ["Mail.ReadWrite.Shared"] : ["Mail.ReadWrite"];
+    const accessToken = await accountManager.ssoGetToken(scopes);
     const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
-    const result = await getMessageViaGraphWithRetry(graphMessageId, authorizationHeader);
+    const result = await getMessageViaGraphWithRetry(graphMessageId, authorizationHeader, mailboxContext);
+    const totalTimeMs = Date.now() - operationStartTime;
 
-    console.log("Saved draft retrieved from Graph.", { retriesNeeded: result.retriesNeeded, message: result.message });
+    console.log("Saved draft retrieved from Graph.", {
+      retriesNeeded: result.retriesNeeded,
+      totalTimeMs,
+      message: result.message,
+    });
 
     // Display results in the TaskPane
     const draftGraphResultsElement = document.getElementById("draftGraphResults");
     const retriesNeededElement = document.getElementById("retriesNeeded");
+    const totalTimeToGraphElement = document.getElementById("totalTimeToGraph");
     const resultItemIdElement = document.getElementById("resultItemId");
     const resultItemSubjectElement = document.getElementById("resultItemSubject");
 
-    if (draftGraphResultsElement && retriesNeededElement && resultItemIdElement && resultItemSubjectElement) {
+    if (draftGraphResultsElement && retriesNeededElement && totalTimeToGraphElement && resultItemIdElement && resultItemSubjectElement) {
       retriesNeededElement.innerText = result.retriesNeeded;
+      totalTimeToGraphElement.innerText = `${totalTimeMs} ms`;
       resultItemIdElement.innerText = result.message.id || "(no id)";
       resultItemSubjectElement.innerText = result.message.subject || "(no subject)";
       draftGraphResultsElement.style.visibility = "visible";
@@ -325,8 +339,59 @@ function convertItemIdForGraph(itemId) {
   return itemId;
 }
 
-async function getMessageViaGraphWithRetry(messageId, authorizationHeader) {
-  const requestUrl = `https://graph.microsoft.com/v1.0/me/messages/${encodeURIComponent(messageId)}`;
+async function getMailboxContextForGraph(mailboxItem) {
+  if (!mailboxItem || typeof mailboxItem.getSharedPropertiesAsync !== "function") {
+    return {
+      isShared: false,
+      mailboxAddress: null,
+    };
+  }
+
+  try {
+    const sharedProperties = await getSharedPropertiesAsync(mailboxItem);
+    const mailboxAddress = sharedProperties?.targetMailbox?.trim();
+
+    if (mailboxAddress) {
+      return {
+        isShared: true,
+        mailboxAddress,
+      };
+    }
+  } catch (error) {
+    console.warn("Unable to read shared mailbox properties. Falling back to /me endpoint.", error);
+  }
+
+  return {
+    isShared: false,
+    mailboxAddress: null,
+  };
+}
+
+function getSharedPropertiesAsync(mailboxItem) {
+  return new Promise((resolve, reject) => {
+    mailboxItem.getSharedPropertiesAsync((result) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        resolve(result.value);
+        return;
+      }
+
+      reject(result.error || new Error("getSharedPropertiesAsync failed."));
+    });
+  });
+}
+
+function buildGraphMessageRequestUrl(messageId, mailboxContext) {
+  const encodedMessageId = encodeURIComponent(messageId);
+  if (mailboxContext?.isShared && mailboxContext.mailboxAddress) {
+    const encodedMailboxAddress = encodeURIComponent(mailboxContext.mailboxAddress);
+    return `https://graph.microsoft.com/v1.0/users/${encodedMailboxAddress}/messages/${encodedMessageId}`;
+  }
+
+  return `https://graph.microsoft.com/v1.0/me/messages/${encodedMessageId}`;
+}
+
+async function getMessageViaGraphWithRetry(messageId, authorizationHeader, mailboxContext) {
+  const requestUrl = buildGraphMessageRequestUrl(messageId, mailboxContext);
   const startTime = Date.now();
   let attempt = 0;
   let lastNotFoundResponse;
