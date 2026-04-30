@@ -78,10 +78,6 @@ Office.onReady((info) => {
       useTenantIdEndpointRadio.checked = !useCommonEndpoint;
       useTenantIdEndpointRadio.onchange = updateAuthorityEndpoint;
     }
-    if (tenantIdElement) {
-      tenantIdElement.disabled = useCommonEndpoint;
-    }
-
     initialiseAccountManager();
 
     applyOfficeTheme();
@@ -99,7 +95,11 @@ function initialiseAccountManager() {
 
   console.log("Initializing account manager...");
   console.log("Application ID: " + applicationId);
-  console.log("Tenant ID: " + effectiveTenantId + " (use common: " + useCommonEndpoint + ")");
+  if (effectiveTenantId === undefined) {
+    console.log("Tenant ID for auth: common");
+  } else {
+    console.log("Tenant ID for auth: " + effectiveTenantId);
+  }
   accountManager.initialize(applicationId, effectiveTenantId);
 }
 
@@ -108,9 +108,6 @@ async function updateAuthorityEndpoint() {
   console.log("Authority endpoint changed. Use common: " + useCommonEndpoint);
   addinSettings.set("useCommonEndpoint", useCommonEndpoint);
   await addinSettings.saveAsync();
-  if (tenantIdElement) {
-    tenantIdElement.disabled = useCommonEndpoint;
-  }
   initialiseAccountManager();
 }
 
