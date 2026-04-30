@@ -16,6 +16,8 @@ const saveDraftAndGetViaGraphButton = document.getElementById("saveDraftAndGetVi
 const sharedMailboxAddressElement = document.getElementById("sharedMailboxAddress");
 const tenantIdElement = document.getElementById("entraTenantId");
 const appIdElement = document.getElementById("entraAppId");
+const useCommonEndpointRadio = document.getElementById("useCommonEndpoint");
+const useTenantIdEndpointRadio = document.getElementById("useTenantIdEndpoint");
 
 /**
  * The add-in settings object.
@@ -65,6 +67,21 @@ Office.onReady((info) => {
       tenantIdElement.onchange = updateTenantId;
     }
 
+    // Restore authority endpoint radio selection.
+    const useCommon = addinSettings.get("useCommonEndpoint");
+    const useCommonEndpoint = (useCommon === undefined) ? true : useCommon;
+    if (useCommonEndpointRadio) {
+      useCommonEndpointRadio.checked = useCommonEndpoint;
+      useCommonEndpointRadio.onchange = updateAuthorityEndpoint;
+    }
+    if (useTenantIdEndpointRadio) {
+      useTenantIdEndpointRadio.checked = !useCommonEndpoint;
+      useTenantIdEndpointRadio.onchange = updateAuthorityEndpoint;
+    }
+    if (tenantIdElement) {
+      tenantIdElement.disabled = useCommonEndpoint;
+    }
+
     initialiseAccountManager();
 
     applyOfficeTheme();
@@ -76,10 +93,25 @@ function initialiseAccountManager() {
   tenantId = addinSettings.get("tenantId");
   applicationId = addinSettings.get("applicationId");
 
+  const useCommon = addinSettings.get("useCommonEndpoint");
+  const useCommonEndpoint = (useCommon === undefined) ? true : useCommon;
+  const effectiveTenantId = useCommonEndpoint ? undefined : tenantId;
+
   console.log("Initializing account manager...");
   console.log("Application ID: " + applicationId);
-  console.log("Tenant ID: " + tenantId);
-  accountManager.initialize(applicationId, tenantId);
+  console.log("Tenant ID: " + effectiveTenantId + " (use common: " + useCommonEndpoint + ")");
+  accountManager.initialize(applicationId, effectiveTenantId);
+}
+
+async function updateAuthorityEndpoint() {
+  const useCommonEndpoint = useCommonEndpointRadio?.checked ?? true;
+  console.log("Authority endpoint changed. Use common: " + useCommonEndpoint);
+  addinSettings.set("useCommonEndpoint", useCommonEndpoint);
+  await addinSettings.saveAsync();
+  if (tenantIdElement) {
+    tenantIdElement.disabled = useCommonEndpoint;
+  }
+  initialiseAccountManager();
 }
 
 function applyOfficeTheme() {
@@ -196,6 +228,8 @@ async function getSharedMailboxMessages() {
     return;
   }
 
+  console.log("Attempting to retrieve messages from shared mailbox: " + sharedMailboxAddress);
+
   try {
     const accessToken = await accountManager.ssoGetToken(["Mail.ReadWrite.Shared"]);
     const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
@@ -270,7 +304,7 @@ async function saveDraftAndGetViaGraph() {
   try {
     const mailboxItem = Office.context.mailbox?.item;
     if (!mailboxItem || typeof mailboxItem.saveAsync !== "function") {
-      throw new Error("This test requires an Outlook compose item that supports saveAsync.");
+      throw new Error("This test requires an Outlook compose item that supports saveAsync (saveAsync function is not available).");
     }
 
     console.log("Saving current item draft...");

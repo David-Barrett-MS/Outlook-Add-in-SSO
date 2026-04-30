@@ -87,6 +87,17 @@
 
         <br>
         <h3>Application Registration</h3>
+        <div style="padding-bottom: 10px">
+            <label class="ms-Label" style="display: block; padding-bottom: 6px">Authority endpoint</label>
+            <div>
+                <input type="radio" id="useCommonEndpoint" name="authorityEndpoint" value="common" checked>
+                <label for="useCommonEndpoint">Use common endpoint</label>
+            </div>
+            <div>
+                <input type="radio" id="useTenantIdEndpoint" name="authorityEndpoint" value="tenantId">
+                <label for="useTenantIdEndpoint">Use tenant ID</label>
+            </div>
+        </div>
         <div class="ms-TextField">
             <label class="ms-Label">App Id</label>
             <input id="entraAppId" class="ms-TextField-field" type="guid" value="" placeholder="">

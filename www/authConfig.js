@@ -37,6 +37,7 @@ class AccountManager {
 
     try {
       this.pca = await msal.createNestablePublicClientApplication(msalConfig);
+      console.log("Successfully created pca.");
     } catch (error) {
       // All console.log statements write to the runtime log. For more information, see https://learn.microsoft.com/office/dev/add-ins/testing/runtime-logging
       console.log(`Error creating pca: ${error}`);
