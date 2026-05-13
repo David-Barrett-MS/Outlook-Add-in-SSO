@@ -13,6 +13,29 @@ const msalConfig = {
     authority: "https://login.microsoftonline.com/",
     supportsNestedAppAuth: true,
   },
+  system: {
+      loggerOptions: {
+          logLevel: LogLevel.Trace,  // most verbose level
+          loggerCallback: (level, message, containsPii) => {
+              switch (level) {
+                  case LogLevel.Error:
+                      console.error(message);
+                      break;
+                  case LogLevel.Warning:
+                      console.warn(message);
+                      break;
+                  case LogLevel.Info:
+                      console.info(message);
+                      break;
+                  case LogLevel.Verbose:
+                      console.debug(message);
+                      break;
+                  default:
+                      console.log(message);
+              }
+          }
+      }
+  }
 };
 
 // Encapsulate functions for getting user account and token information.
@@ -37,10 +60,10 @@ class AccountManager {
 
     try {
       this.pca = await msal.createNestablePublicClientApplication(msalConfig);
-      console.log("Successfully created pca.");
+      console.log(`Successfully created pca with authority: ${msalConfig.auth.authority} and clientId: ${msalConfig.auth.clientId}`);
     } catch (error) {
       // All console.log statements write to the runtime log. For more information, see https://learn.microsoft.com/office/dev/add-ins/testing/runtime-logging
-      console.log(`Error creating pca: ${error}`);
+      console.log(`Error creating pca with authority: ${msalConfig.auth.authority} and clientId: ${msalConfig.auth.clientId}: ${error}`);
     }
   }
 
