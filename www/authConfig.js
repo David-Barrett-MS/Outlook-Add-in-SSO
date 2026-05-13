@@ -13,9 +13,33 @@ const msalConfig = {
     authority: "https://login.microsoftonline.com/",
     supportsNestedAppAuth: true,
   },
+  system: {
+    loggerOptions: {
+      loggerCallback: (level, message, containsPii) => {
+        if (containsPii) return;
+        switch (level) {
+          case msal.LogLevel.Error:
+            console.error(`[MSAL] Error: ${message}`);
+            break;
+          case msal.LogLevel.Warning:
+            console.warn(`[MSAL] Warning: ${message}`);
+            break;
+          case msal.LogLevel.Info:
+            console.info(`[MSAL] Info: ${message}`);
+            break;
+          case msal.LogLevel.Verbose:
+            console.debug(`[MSAL] Verbose: ${message}`);
+            break;
+          case msal.LogLevel.Trace:
+            console.debug(`[MSAL] Trace: ${message}`);
+            break;
+        }
+      },
+      logLevel: msal.LogLevel.Trace,
+      piiLoggingEnabled: false,
+    },
+  },
 };
-
-msal.browser.log.level = Verbose;
 
 // Encapsulate functions for getting user account and token information.
 class AccountManager {
