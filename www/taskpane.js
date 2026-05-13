@@ -18,6 +18,7 @@ const tenantIdElement = document.getElementById("entraTenantId");
 const appIdElement = document.getElementById("entraAppId");
 const useCommonEndpointRadio = document.getElementById("useCommonEndpoint");
 const useTenantIdEndpointRadio = document.getElementById("useTenantIdEndpoint");
+const enablePiiLoggingCheckbox = document.getElementById("enablePiiLogging");
 
 /**
  * The add-in settings object.
@@ -78,6 +79,13 @@ Office.onReady((info) => {
       useTenantIdEndpointRadio.checked = !useCommonEndpoint;
       useTenantIdEndpointRadio.onchange = updateAuthorityEndpoint;
     }
+
+    // Restore PII logging checkbox.
+    const piiLogging = addinSettings.get("piiLogging") ?? false;
+    if (enablePiiLoggingCheckbox) {
+      enablePiiLoggingCheckbox.checked = piiLogging;
+      enablePiiLoggingCheckbox.onchange = updatePiiLogging;
+    }
     initialiseAccountManager();
 
     applyOfficeTheme();
@@ -92,15 +100,25 @@ function initialiseAccountManager() {
   const useCommon = addinSettings.get("useCommonEndpoint");
   const useCommonEndpoint = (useCommon === undefined) ? true : useCommon;
   const effectiveTenantId = useCommonEndpoint ? undefined : tenantId;
+  const piiLogging = addinSettings.get("piiLogging") ?? false;
 
   console.log("Initializing account manager...");
   console.log("Application ID: " + applicationId);
+  console.log("PII logging: " + piiLogging);
   if (effectiveTenantId === undefined) {
     console.log("Tenant ID for auth: common");
   } else {
     console.log("Tenant ID for auth: " + effectiveTenantId);
   }
-  accountManager.initialize(applicationId, effectiveTenantId);
+  accountManager.initialize(applicationId, effectiveTenantId, piiLogging);
+}
+
+async function updatePiiLogging() {
+  const piiLogging = enablePiiLoggingCheckbox?.checked ?? false;
+  console.log("PII logging changed: " + piiLogging);
+  addinSettings.set("piiLogging", piiLogging);
+  await addinSettings.saveAsync();
+  initialiseAccountManager();
 }
 
 async function updateAuthorityEndpoint() {

@@ -16,7 +16,7 @@ const msalConfig = {
   system: {
     loggerOptions: {
       loggerCallback: (level, message, containsPii) => {
-        if (containsPii) return;
+        if (containsPii && !msalConfig.system.loggerOptions.piiLoggingEnabled) return;
         switch (level) {
           case msal.LogLevel.Error:
             console.error(`[MSAL] Error: ${message}`);
@@ -46,7 +46,8 @@ class AccountManager {
   pca = undefined;
 
   // Initialize MSAL public client application.
-  async initialize(EntraApplicationId, EntraTenantId) {
+  async initialize(EntraApplicationId, EntraTenantId, piiLogging = false) {
+    msalConfig.system.loggerOptions.piiLoggingEnabled = piiLogging;
     // Initialize the public client application.
     if (EntraTenantId !== undefined) {
       msalConfig.auth.authority = `https://login.microsoftonline.com/${EntraTenantId}`;
