@@ -1,14 +1,14 @@
-import { CommonEndSessionRequest, IPerformanceClient, Logger, ICrypto, PkceCodes, CommonAuthorizationUrlRequest } from "@azure/msal-common/browser";
+import { AuthorizationCodeClient, CommonEndSessionRequest, IPerformanceClient, Logger, ICrypto, PkceCodes, CommonAuthorizationUrlRequest } from "@azure/msal-common/browser";
 import { StandardInteractionClient } from "./StandardInteractionClient.js";
 import { EndSessionPopupRequest } from "../request/EndSessionPopupRequest.js";
 import { PopupRequest } from "../request/PopupRequest.js";
-import { NativeMessageHandler } from "../broker/nativeBroker/NativeMessageHandler.js";
 import { INavigationClient } from "../navigation/INavigationClient.js";
 import { EventHandler } from "../event/EventHandler.js";
 import { BrowserCacheManager } from "../cache/BrowserCacheManager.js";
 import { BrowserConfiguration } from "../config/Configuration.js";
 import { PopupWindowAttributes } from "../request/PopupWindowAttributes.js";
 import { AuthenticationResult } from "../response/AuthenticationResult.js";
+import { IPlatformAuthHandler } from "../broker/nativeBroker/IPlatformAuthHandler.js";
 export type PopupParams = {
     popup?: Window | null;
     popupName: string;
@@ -18,7 +18,7 @@ export type PopupParams = {
 export declare class PopupClient extends StandardInteractionClient {
     private currentWindow;
     protected nativeStorage: BrowserCacheManager;
-    constructor(config: BrowserConfiguration, storageImpl: BrowserCacheManager, browserCrypto: ICrypto, logger: Logger, eventHandler: EventHandler, navigationClient: INavigationClient, performanceClient: IPerformanceClient, nativeStorageImpl: BrowserCacheManager, nativeMessageHandler?: NativeMessageHandler, correlationId?: string);
+    constructor(config: BrowserConfiguration, storageImpl: BrowserCacheManager, browserCrypto: ICrypto, logger: Logger, eventHandler: EventHandler, navigationClient: INavigationClient, performanceClient: IPerformanceClient, nativeStorageImpl: BrowserCacheManager, correlationId: string, platformAuthHandler?: IPlatformAuthHandler);
     /**
      * Acquires tokens by opening a popup window to the /authorize endpoint of the authority
      * @param request
@@ -51,7 +51,8 @@ export declare class PopupClient extends StandardInteractionClient {
      * Executes EAR flow
      * @param request
      */
-    executeEarFlow(request: CommonAuthorizationUrlRequest, popupParams: PopupParams): Promise<AuthenticationResult>;
+    executeEarFlow(request: CommonAuthorizationUrlRequest, popupParams: PopupParams, pkceCodes?: PkceCodes): Promise<AuthenticationResult>;
+    executeCodeFlowWithPost(request: CommonAuthorizationUrlRequest, popupParams: PopupParams, authClient: AuthorizationCodeClient, pkceVerifier: string): Promise<AuthenticationResult>;
     /**
      *
      * @param validRequest
@@ -67,12 +68,6 @@ export declare class PopupClient extends StandardInteractionClient {
      * @param requestUrl
      */
     initiateAuthRequest(requestUrl: string, params: PopupParams): Window;
-    /**
-     * Monitors a window until it loads a url with the same origin.
-     * @param popupWindow - window that is being monitored
-     * @param timeout - timeout for processing hash once popup is redirected back to application
-     */
-    monitorPopupForHash(popupWindow: Window, popupWindowParent: Window): Promise<string>;
     /**
      * @hidden
      *
@@ -95,15 +90,6 @@ export declare class PopupClient extends StandardInteractionClient {
      * @returns
      */
     openSizedPopup(urlNavigate: string, { popupName, popupWindowAttributes, popupWindowParent }: PopupParams): Window | null;
-    /**
-     * Event callback to unload main window.
-     */
-    unloadWindow(e: Event): void;
-    /**
-     * Closes popup, removes any state vars created during popup calls.
-     * @param popupWindow
-     */
-    cleanPopup(popupWindow: Window, popupWindowParent: Window): void;
     /**
      * Generates the name for the popup based on the client id and request
      * @param clientId

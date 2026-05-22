@@ -2,15 +2,16 @@ import { ServerTelemetryManager, AuthorizeResponse, ICrypto, Logger, IPerformanc
 import { StandardInteractionClient } from "./StandardInteractionClient.js";
 import { EndSessionRequest } from "../request/EndSessionRequest.js";
 import { RedirectRequest } from "../request/RedirectRequest.js";
-import { NativeMessageHandler } from "../broker/nativeBroker/NativeMessageHandler.js";
 import { BrowserConfiguration } from "../config/Configuration.js";
 import { BrowserCacheManager } from "../cache/BrowserCacheManager.js";
 import { EventHandler } from "../event/EventHandler.js";
 import { INavigationClient } from "../navigation/INavigationClient.js";
 import { AuthenticationResult } from "../response/AuthenticationResult.js";
+import { IPlatformAuthHandler } from "../broker/nativeBroker/IPlatformAuthHandler.js";
+import { HandleRedirectPromiseOptions } from "../request/HandleRedirectPromiseOptions.js";
 export declare class RedirectClient extends StandardInteractionClient {
     protected nativeStorage: BrowserCacheManager;
-    constructor(config: BrowserConfiguration, storageImpl: BrowserCacheManager, browserCrypto: ICrypto, logger: Logger, eventHandler: EventHandler, navigationClient: INavigationClient, performanceClient: IPerformanceClient, nativeStorageImpl: BrowserCacheManager, nativeMessageHandler?: NativeMessageHandler, correlationId?: string);
+    constructor(config: BrowserConfiguration, storageImpl: BrowserCacheManager, browserCrypto: ICrypto, logger: Logger, eventHandler: EventHandler, navigationClient: INavigationClient, performanceClient: IPerformanceClient, nativeStorageImpl: BrowserCacheManager, correlationId: string, platformAuthHandler?: IPlatformAuthHandler);
     /**
      * Redirects the page to the /authorize endpoint of the IDP
      * @param request
@@ -21,20 +22,28 @@ export declare class RedirectClient extends StandardInteractionClient {
      * @param request
      * @returns
      */
-    executeCodeFlow(request: CommonAuthorizationUrlRequest, onRedirectNavigate?: (url: string) => boolean | void): Promise<void>;
+    executeCodeFlow(request: CommonAuthorizationUrlRequest): Promise<void>;
     /**
      * Executes EAR flow
      * @param request
      */
     executeEarFlow(request: CommonAuthorizationUrlRequest): Promise<void>;
     /**
+     * Executes classic Authorization Code flow with a POST request.
+     * @param request
+     */
+    executeCodeFlowWithPost(request: CommonAuthorizationUrlRequest): Promise<void>;
+    /**
      * Checks if navigateToLoginRequestUrl is set, and:
      * - if true, performs logic to cache and navigate
      * - if false, handles hash string and parses response
      * @param hash {string} url hash
      * @param parentMeasurement {InProgressPerformanceEvent} parent measurement
+     * @param request {CommonAuthorizationUrlRequest} request object
+     * @param pkceVerifier {string} PKCE verifier
+     * @param options {HandleRedirectPromiseOptions} options for handling redirect promise
      */
-    handleRedirectPromise(hash: string | undefined, request: CommonAuthorizationUrlRequest, pkceVerifier: string, parentMeasurement: InProgressPerformanceEvent): Promise<AuthenticationResult | null>;
+    handleRedirectPromise(request: CommonAuthorizationUrlRequest, pkceVerifier: string, parentMeasurement: InProgressPerformanceEvent, options?: HandleRedirectPromiseOptions): Promise<AuthenticationResult | null>;
     /**
      * Gets the response hash for a redirect request
      * Returns null if interactionType in the state value is not "redirect" or the hash does not contain known properties
@@ -52,7 +61,7 @@ export declare class RedirectClient extends StandardInteractionClient {
      * @param urlNavigate
      * @param onRedirectNavigateRequest - onRedirectNavigate callback provided on the request
      */
-    initiateAuthRequest(requestUrl: string, onRedirectNavigateRequest?: (url: string) => boolean | void): Promise<void>;
+    initiateAuthRequest(requestUrl: string): Promise<void>;
     /**
      * Use to log out the current user, and redirect the user to the postLogoutRedirectUri.
      * Default behaviour is to redirect the user to `window.location.href`.

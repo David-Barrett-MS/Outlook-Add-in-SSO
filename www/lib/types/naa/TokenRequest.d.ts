@@ -2,6 +2,7 @@ export type TokenRequest = {
     platformBrokerId?: string;
     clientId: string;
     authority?: string;
+    resource?: string;
     scope: string;
     correlationId: string;
     claims?: string;
@@ -15,5 +16,6 @@ export type TokenRequest = {
     resourceRequestUri?: string;
     extendedExpiryToken?: boolean;
     extraParameters?: Map<string, string>;
+    forceRefresh?: boolean;
 };
 //# sourceMappingURL=TokenRequest.d.ts.map
