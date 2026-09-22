@@ -117,11 +117,11 @@ ul {
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    background-color: #1e1e1e;
-    color: #d4d4d4;
+    background-color: #f3f2f1;
+    color: #201f1e;
     font-family: Consolas, "Courier New", monospace;
     font-size: 12px;
-    border-top: 1px solid #3c3c3c;
+    border-top: 1px solid #c8c6c4;
     z-index: 1000;
     box-sizing: border-box;
 }
@@ -130,7 +130,7 @@ ul {
     height: 6px;
     flex: 0 0 auto;
     cursor: ns-resize;
-    background-color: #3c3c3c;
+    background-color: #c8c6c4;
 }
 
 #debugConsoleHandle:hover {
@@ -143,7 +143,7 @@ ul {
     align-items: center;
     justify-content: space-between;
     padding: 4px 8px;
-    background-color: #252526;
+    background-color: #edebe9;
     font-family: "Segoe UI", sans-serif;
     font-size: 12px;
     font-weight: 600;
@@ -151,8 +151,8 @@ ul {
 
 #debugConsoleHeader button {
     background: none;
-    border: 1px solid #5a5a5a;
-    color: #d4d4d4;
+    border: 1px solid #8a8886;
+    color: #201f1e;
     font-size: 11px;
     padding: 2px 8px;
     cursor: pointer;
@@ -160,7 +160,7 @@ ul {
 }
 
 #debugConsoleHeader button:hover {
-    background-color: #3c3c3c;
+    background-color: #e1dfdd;
 }
 
 #debugConsoleOutput {
@@ -172,27 +172,27 @@ ul {
 }
 
 .debug-console-entry {
-    border-bottom: 1px solid #2d2d2d;
+    border-bottom: 1px solid #edebe9;
     padding: 2px 0;
 }
 
 .debug-console-timestamp {
-    color: #6a9955;
+    color: #605e5c;
     margin-right: 6px;
 }
 
 .debug-console-entry.log {
-    color: #d4d4d4;
+    color: #201f1e;
 }
 
 .debug-console-entry.info {
-    color: #4fc1ff;
+    color: #005a9e;
 }
 
 .debug-console-entry.warn {
-    color: #dcdcaa;
+    color: #986f0b;
 }
 
 .debug-console-entry.error {
-    color: #f48771;
+    color: #a4262c;
 }
