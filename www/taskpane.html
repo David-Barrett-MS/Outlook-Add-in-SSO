@@ -36,27 +36,20 @@
     </section>
     <main id="app-body" class="ms-welcome__main" style="display: none;">
         <h2 class="ms-font-xl"> SSO with nested app authentication </h2>
-        <p class="ms-font-l">This add-in demonstrates how to connect to Microsoft Graph from an add-in.</p>        
-        
+        <p class="ms-font-l">This add-in demonstrates how to connect to Microsoft Graph from an add-in.</p>
+
+        <h3>Actions</h3>
         <button class="Button Button--primary" id="getUserData">
             <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
             <span class="Button-label">Get user data</span>
             <span class="Button-description">Gets the user's name and email.</span>
         </button>
-        <div id="userData" style="visibility: hidden;">
-            <span><strong>Name:</strong> </span><span id="userName"></span><br>
-            <span><strong>Email:</strong> </span><span id="userEmail"></span><br>
-        </div>
         <br>
         <button class="Button Button--primary" id="getUserFiles">
             <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
             <span class="Button-label">Get user files</span>
             <span class="Button-description">Gets the first 10 items from the user's OneDrive and inserts them in the document.</span>
         </button>
-        <div id="userFiles" style="visibility: hidden; width:100%;">
-            <label>OneDrive root folder contents:</label>
-            <ul id="fileList"></ul>
-        </div>
         <br>
         <div class="ms-TextField">
             <label class="ms-Label" style="padding-bottom: 10px">Shared mailbox address</label>
@@ -67,11 +60,7 @@
             <span class="Button-label">Get shared mailbox messages</span>
             <span class="Button-description">Gets the top 5 shared mailbox messages and logs their subjects.</span>
         </button>
-         <div id="sharedMailboxMessages" style="visibility: hidden; width:100%;">
-            <label>Top 5 shared mailbox messages:</label>
-            <ul id="messageList"></ul>
-        </div>
-       <br>
+        <br>
         <button class="Button Button--primary" id="listDistributionLists">
             <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
             <span class="Button-label">List Outlook Distribution Lists</span>
@@ -88,12 +77,8 @@
                 <span class="Button-label">Expand List</span>
                 <span class="Button-description">Recursively expands the selected distribution list and lists all resolved contacts.</span>
             </button>
-            <div id="distributionListMembersContainer" style="visibility: hidden; width:100%;">
-                <label>Distribution list members:</label>
-                <select id="distributionListMembers" multiple style="width:100%; height:150px;"></select>
-            </div>
         </div>
-       <br>
+        <br>
         <button class="Button Button--primary" id="saveDraftAndGetViaGraph">
             <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
             <span class="Button-label">Save draft and get via Graph</span>
@@ -102,21 +87,60 @@
         <div id="saveDraftStatus" class="status-indicator" style="visibility: hidden; padding-top: 6px;">
             <span class="spinner"></span><span id="saveDraftStatusText">Waiting for draft to become available via Graph...</span>
         </div>
-        <div id="draftGraphResults" style="visibility: hidden; width:100%;">
-            <span><strong>Retries needed:</strong> </span><span id="retriesNeeded"></span><br>
-            <span><strong>Total time to Graph availability:</strong> </span><span id="totalTimeToGraph"></span><br>
-            <span><strong>Item ID:</strong> </span><span id="resultItemId"></span><br>
-            <span><strong>Subject:</strong> </span><span id="resultItemSubject"></span><br>
-        </div>
         <br>
         <button class="Button Button--primary" id="expandRecipients">
             <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
             <span class="Button-label">Expand Recipients</span>
             <span class="Button-description">Retrieves the current item's recipients and expands any personal distribution lists via Graph.</span>
         </button>
-        <div id="expandedRecipientsContainer" style="visibility: hidden; width:100%;">
-            <label>Expanded recipients:</label>
-            <select id="expandedRecipientsList" multiple style="width:100%; height:150px;"></select>
+
+        <br><br>
+        <h3>Results</h3>
+        <div id="resultsPanel">
+            <div class="result-section">
+                <h4>User Data</h4>
+                <div id="userData" style="visibility: hidden;">
+                    <span><strong>Name:</strong> </span><span id="userName"></span><br>
+                    <span><strong>Email:</strong> </span><span id="userEmail"></span><br>
+                </div>
+            </div>
+            <div class="result-section">
+                <h4>User Files</h4>
+                <div id="userFiles" style="visibility: hidden; width:100%;">
+                    <label>OneDrive root folder contents:</label>
+                    <ul id="fileList"></ul>
+                </div>
+            </div>
+            <div class="result-section">
+                <h4>Shared Mailbox Messages</h4>
+                <div id="sharedMailboxMessages" style="visibility: hidden; width:100%;">
+                    <label>Top 5 shared mailbox messages:</label>
+                    <ul id="messageList"></ul>
+                </div>
+            </div>
+            <div class="result-section">
+                <h4>Distribution List Members</h4>
+                <div id="distributionListMembersContainer" style="visibility: hidden; width:100%;">
+                    <label>Distribution list members:</label>
+                    <select id="distributionListMembers" multiple style="width:100%; height:150px;"></select>
+                </div>
+            </div>
+            <div class="result-section">
+                <h4>Save Draft &amp; Graph Retrieval</h4>
+                <div id="draftGraphResults" style="visibility: hidden; width:100%;">
+                    <span><strong>Retries needed:</strong> </span><span id="retriesNeeded"></span><br>
+                    <span><strong>Total time to Graph availability:</strong> </span><span id="totalTimeToGraph"></span><br>
+                    <span><strong>Item ID:</strong> </span><span id="resultItemId"></span><br>
+                    <span><strong>Subject:</strong> </span><span id="resultItemSubject"></span><br>
+                </div>
+            </div>
+            <div class="result-section">
+                <h4>Expanded Recipients</h4>
+                <div id="expandedRecipientsContainer" style="visibility: hidden; width:100%;">
+                    <label>Expanded recipients:</label>
+                    <select id="expandedRecipientsList" multiple style="width:100%; height:150px;"></select>
+                </div>
+            </div>
         </div>
 
         <br>

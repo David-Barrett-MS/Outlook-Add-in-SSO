@@ -84,6 +84,26 @@ ul {
     padding: 0;
 }
 
+#resultsPanel {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.result-section {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #edebe9;
+    border-radius: 2px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+}
+
+.result-section h4 {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+    color: #605e5c;
+}
+
 .spinner {
     display: inline-block;
     width: 14px;
