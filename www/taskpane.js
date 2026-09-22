@@ -339,7 +339,7 @@ async function getUserData() {
     console.log(userAccount);
 
     if (userDataElement) {
-      userDataElement.style.visibility = "visible";
+      userDataElement.style.display = "block";
     }
     if (userName) {
       userName.innerText = idTokenClaims.name ?? "";
@@ -363,7 +363,7 @@ async function getUserFiles() {
 
     const userFilesElement = document.getElementById("userFiles");
     if (userFilesElement) {
-      userFilesElement.style.visibility = "visible";
+      userFilesElement.style.display = "block";
       const userFilesListElement = document.getElementById("fileList");
       userFilesListElement.innerHTML = ""; // Clear previous list
       console.log("Writing file names to the taskpane...");
@@ -449,7 +449,7 @@ async function getSharedMailboxMessages() {
         });
       }
 
-      sharedMailboxMessagesElement.style.visibility = "visible";
+      sharedMailboxMessagesElement.style.display = "block";
     }
   } catch (error) {
     console.error("Error retrieving shared mailbox messages.", error);
@@ -502,10 +502,10 @@ async function listDistributionLists() {
     }
 
     if (distributionListContainerElement) {
-      distributionListContainerElement.style.visibility = "visible";
+      distributionListContainerElement.style.display = "block";
     }
     if (distributionListMembersContainerElement) {
-      distributionListMembersContainerElement.style.visibility = "hidden";
+      distributionListMembersContainerElement.style.display = "none";
     }
     updateExpandDistributionListButtonState();
   } catch (error) {
@@ -578,7 +578,7 @@ async function expandDistributionList() {
     }
 
     if (distributionListMembersContainerElement) {
-      distributionListMembersContainerElement.style.visibility = "visible";
+      distributionListMembersContainerElement.style.display = "block";
     }
   } catch (error) {
     console.error("Error expanding distribution list.", error);
@@ -693,7 +693,7 @@ async function expandRecipients() {
     }
 
     if (expandedRecipientsContainerElement) {
-      expandedRecipientsContainerElement.style.visibility = "visible";
+      expandedRecipientsContainerElement.style.display = "block";
     }
   } catch (error) {
     console.error("Error expanding recipients.", error);
@@ -818,7 +818,7 @@ async function saveDraftAndGetViaGraph() {
       totalTimeToGraphElement.innerText = `${totalTimeMs} ms`;
       resultItemIdElement.innerText = result.message.id || "(no id)";
       resultItemSubjectElement.innerText = result.message.subject || "(no subject)";
-      draftGraphResultsElement.style.visibility = "visible";
+      draftGraphResultsElement.style.display = "block";
     }
   } catch (error) {
     console.error("Error saving draft and retrieving it via Graph.", error);
@@ -839,7 +839,7 @@ function setSaveDraftStatus(visible, statusText) {
     saveDraftStatusTextElement.innerText = statusText;
   }
   if (saveDraftStatusElement) {
-    saveDraftStatusElement.style.visibility = visible ? "visible" : "hidden";
+    saveDraftStatusElement.style.display = visible ? "inline-flex" : "none";
   }
 }
 
