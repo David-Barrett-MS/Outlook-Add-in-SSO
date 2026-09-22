@@ -22,6 +22,8 @@ const distributionListMembersElement = document.getElementById("distributionList
 const expandRecipientsButton = document.getElementById("expandRecipients");
 const expandedRecipientsContainerElement = document.getElementById("expandedRecipientsContainer");
 const expandedRecipientsListElement = document.getElementById("expandedRecipientsList");
+const saveDraftStatusElement = document.getElementById("saveDraftStatus");
+const saveDraftStatusTextElement = document.getElementById("saveDraftStatusText");
 const sharedMailboxAddressElement = document.getElementById("sharedMailboxAddress");
 const tenantIdElement = document.getElementById("entraTenantId");
 const appIdElement = document.getElementById("entraAppId");
@@ -616,6 +618,11 @@ function addUniqueContact(contacts, seenContactKeys, displayName, emailAddress) 
 }
 
 async function saveDraftAndGetViaGraph() {
+  setSaveDraftStatus(true, "Saving draft...");
+  if (saveDraftAndGetViaGraphButton) {
+    saveDraftAndGetViaGraphButton.disabled = true;
+  }
+
   try {
     const mailboxItem = Office.context.mailbox?.item;
     if (!mailboxItem || typeof mailboxItem.saveAsync !== "function") {
@@ -635,10 +642,13 @@ async function saveDraftAndGetViaGraph() {
       mailboxAddress: mailboxContext.mailboxAddress,
     });
 
+    setSaveDraftStatus(true, "Waiting for draft to become available via Graph...");
     const scopes = mailboxContext.isShared ? ["Mail.ReadWrite.Shared"] : ["Mail.ReadWrite"];
     const accessToken = await accountManager.ssoGetToken(scopes);
     const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
-    const result = await getMessageViaGraphWithRetry(graphMessageId, authorizationHeader, mailboxContext);
+    const result = await getMessageViaGraphWithRetry(graphMessageId, authorizationHeader, mailboxContext, (attempt) => {
+      setSaveDraftStatus(true, `Waiting for draft to become available via Graph... (attempt ${attempt})`);
+    });
     const totalTimeMs = Date.now() - operationStartTime;
 
     console.log("Saved draft retrieved from Graph.", {
@@ -663,6 +673,24 @@ async function saveDraftAndGetViaGraph() {
     }
   } catch (error) {
     console.error("Error saving draft and retrieving it via Graph.", error);
+  } finally {
+    setSaveDraftStatus(false);
+    if (saveDraftAndGetViaGraphButton) {
+      saveDraftAndGetViaGraphButton.disabled = false;
+    }
+  }
+}
+
+/**
+ * Shows or hides the spinning status indicator next to the "Save draft and get via Graph"
+ * button, optionally updating its status text.
+ */
+function setSaveDraftStatus(visible, statusText) {
+  if (saveDraftStatusTextElement && statusText) {
+    saveDraftStatusTextElement.innerText = statusText;
+  }
+  if (saveDraftStatusElement) {
+    saveDraftStatusElement.style.visibility = visible ? "visible" : "hidden";
   }
 }
 
@@ -739,7 +767,7 @@ function buildGraphMessageRequestUrl(messageId, mailboxContext) {
   return `https://graph.microsoft.com/v1.0/me/messages/${encodedMessageId}`;
 }
 
-async function getMessageViaGraphWithRetry(messageId, authorizationHeader, mailboxContext) {
+async function getMessageViaGraphWithRetry(messageId, authorizationHeader, mailboxContext, onAttempt) {
   const requestUrl = buildGraphMessageRequestUrl(messageId, mailboxContext);
   const startTime = Date.now();
   let attempt = 0;
@@ -747,6 +775,9 @@ async function getMessageViaGraphWithRetry(messageId, authorizationHeader, mailb
 
   while (Date.now() - startTime <= 20000) {
     attempt += 1;
+    if (typeof onAttempt === "function") {
+      onAttempt(attempt);
+    }
     const response = await fetch(requestUrl, {
       headers: {
         Authorization: authorizationHeader,

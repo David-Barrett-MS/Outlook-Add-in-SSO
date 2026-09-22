@@ -99,6 +99,9 @@
             <span class="Button-label">Save draft and get via Graph</span>
             <span class="Button-description">Runs the save draft and Graph retrieval test.</span>
         </button>
+        <div id="saveDraftStatus" class="status-indicator" style="visibility: hidden; padding-top: 6px;">
+            <span class="spinner"></span><span id="saveDraftStatusText">Waiting for draft to become available via Graph...</span>
+        </div>
         <div id="draftGraphResults" style="visibility: hidden; width:100%;">
             <span><strong>Retries needed:</strong> </span><span id="retriesNeeded"></span><br>
             <span><strong>Total time to Graph availability:</strong> </span><span id="totalTimeToGraph"></span><br>
