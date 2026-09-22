@@ -30,6 +30,10 @@ const appIdElement = document.getElementById("entraAppId");
 const useCommonEndpointRadio = document.getElementById("useCommonEndpoint");
 const useTenantIdEndpointRadio = document.getElementById("useTenantIdEndpoint");
 const enablePiiLoggingCheckbox = document.getElementById("enablePiiLogging");
+const debugConsoleElement = document.getElementById("debugConsole");
+const debugConsoleHandleElement = document.getElementById("debugConsoleHandle");
+const debugConsoleOutputElement = document.getElementById("debugConsoleOutput");
+const debugConsoleClearButton = document.getElementById("debugConsoleClear");
 
 /**
  * The add-in settings object.
@@ -38,6 +42,139 @@ const enablePiiLoggingCheckbox = document.getElementById("enablePiiLogging");
 let addinSettings;
 let tenantId;
 let applicationId;
+
+initializeDebugConsole();
+
+/**
+ * Sets up the bottom-docked debug console: hooks the console.log/info/warn/error/debug methods
+ * (and uncaught error/rejection events) so their output is also displayed in the TaskPane, and
+ * wires up the vertical drag-to-resize handle and "Clear" button.
+ */
+function initializeDebugConsole() {
+  if (!debugConsoleElement || !debugConsoleOutputElement) {
+    return;
+  }
+
+  setDebugConsoleHeight(window.innerHeight * 0.25);
+
+  if (debugConsoleClearButton) {
+    debugConsoleClearButton.onclick = () => {
+      debugConsoleOutputElement.innerHTML = "";
+    };
+  }
+
+  if (debugConsoleHandleElement) {
+    debugConsoleHandleElement.addEventListener("mousedown", startDebugConsoleResize);
+  }
+
+  window.addEventListener("resize", () => {
+    setDebugConsoleHeight(debugConsoleElement.getBoundingClientRect().height);
+  });
+
+  hookConsoleMethods();
+}
+
+/**
+ * Sets the debug console's height (clamped to sensible min/max values) and adjusts the page's
+ * bottom padding so the fixed-position console doesn't cover other TaskPane content.
+ */
+function setDebugConsoleHeight(heightPx) {
+  const minHeight = 60;
+  const maxHeight = window.innerHeight - 40;
+  const clampedHeight = Math.min(Math.max(heightPx, minHeight), maxHeight);
+
+  debugConsoleElement.style.height = `${clampedHeight}px`;
+  document.body.style.paddingBottom = `${clampedHeight}px`;
+}
+
+/**
+ * Begins a vertical drag-resize of the debug console, tracking mouse movement until mouseup.
+ */
+function startDebugConsoleResize(event) {
+  event.preventDefault();
+
+  const onMouseMove = (moveEvent) => {
+    setDebugConsoleHeight(window.innerHeight - moveEvent.clientY);
+  };
+  const onMouseUp = () => {
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+  };
+
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mouseup", onMouseUp);
+}
+
+/**
+ * Wraps console.log/info/warn/error/debug so their output is echoed to the debug console panel,
+ * and also captures uncaught errors and unhandled promise rejections.
+ */
+function hookConsoleMethods() {
+  ["log", "info", "warn", "error", "debug"].forEach((level) => {
+    const originalMethod = console[level] ? console[level].bind(console) : null;
+    console[level] = (...args) => {
+      if (originalMethod) {
+        originalMethod(...args);
+      }
+      appendDebugConsoleEntry(level, args);
+    };
+  });
+
+  window.addEventListener("error", (event) => {
+    appendDebugConsoleEntry("error", [event.message, event.error]);
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    appendDebugConsoleEntry("error", ["Unhandled promise rejection:", event.reason]);
+  });
+}
+
+/**
+ * Appends a formatted log entry to the debug console output and scrolls it into view.
+ */
+function appendDebugConsoleEntry(level, args) {
+  if (!debugConsoleOutputElement) {
+    return;
+  }
+
+  const entry = document.createElement("div");
+  entry.className = `debug-console-entry ${level}`;
+
+  const timestamp = document.createElement("span");
+  timestamp.className = "debug-console-timestamp";
+  timestamp.innerText = new Date().toLocaleTimeString();
+
+  const message = document.createElement("span");
+  message.innerText = args.map(formatDebugConsoleArg).join(" ");
+
+  entry.appendChild(timestamp);
+  entry.appendChild(message);
+  debugConsoleOutputElement.appendChild(entry);
+  debugConsoleOutputElement.scrollTop = debugConsoleOutputElement.scrollHeight;
+}
+
+/**
+ * Formats a single console argument for display as text in the debug console.
+ */
+function formatDebugConsoleArg(arg) {
+  if (arg === undefined) {
+    return "undefined";
+  }
+  if (arg === null) {
+    return "null";
+  }
+  if (typeof arg === "string") {
+    return arg;
+  }
+  if (arg instanceof Error) {
+    return arg.stack || arg.message;
+  }
+
+  try {
+    return JSON.stringify(arg, null, 2);
+  } catch (error) {
+    return String(arg);
+  }
+}
 
 Office.onReady((info) => {
   if (info.host == Office.HostType.Outlook) {
