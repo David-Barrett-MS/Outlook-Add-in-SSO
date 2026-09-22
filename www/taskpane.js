@@ -496,6 +496,7 @@ async function listDistributionLists() {
         const option = document.createElement("option");
         option.value = distributionList.id;
         option.text = distributionList.displayName || "(no name)";
+        option.title = `Id: ${distributionList.id}`; // Disambiguates lists that share a display name.
         distributionListSelectElement.appendChild(option);
       });
     }
@@ -657,9 +658,17 @@ async function expandRecipients() {
 
     for (const recipient of allRecipients) {
       if (recipient.recipientType === Office.MailboxEnums.RecipientType.DistributionList) {
-        const distributionListId = await findDistributionListIdByDisplayName(recipient.displayName, accessToken);
-        if (distributionListId) {
-          await expandDistributionListMembers(distributionListId, accessToken, visitedDistributionListIds, expandedContacts, seenContactKeys);
+        const distributionListIds = await findDistributionListIdsByDisplayName(recipient.displayName, accessToken);
+        if (distributionListIds.length > 0) {
+          if (distributionListIds.length > 1) {
+            // Outlook allows multiple personal distribution lists to share the same display
+            // name, and Office.js does not expose which one was actually used on this item, so
+            // every matching list is expanded to avoid silently dropping members.
+            console.warn(`Multiple distribution lists named "${recipient.displayName}" were found. Expanding all of them.`);
+          }
+          for (const distributionListId of distributionListIds) {
+            await expandDistributionListMembers(distributionListId, accessToken, visitedDistributionListIds, expandedContacts, seenContactKeys);
+          }
           continue;
         }
         console.warn(`Could not resolve distribution list "${recipient.displayName}" via Graph. Adding as-is.`);
@@ -714,12 +723,15 @@ function getRecipientsAsync(recipientsField) {
 }
 
 /**
- * Looks up a personal distribution list's Graph id by its display name (as shown in an
- * Office.js recipient), since Office.js does not expose the underlying Graph id directly.
+ * Looks up the Graph id(s) of every personal distribution list matching a display name (as
+ * shown in an Office.js recipient), since Office.js does not expose the underlying Graph id
+ * directly. Returns an array because Outlook allows multiple personal distribution lists to
+ * share the same display name, so a name lookup alone cannot guarantee a single, unambiguous
+ * match.
  */
-async function findDistributionListIdByDisplayName(displayName, accessToken) {
+async function findDistributionListIdsByDisplayName(displayName, accessToken) {
   if (!displayName) {
-    return null;
+    return [];
   }
 
   const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
@@ -733,12 +745,12 @@ async function findDistributionListIdByDisplayName(displayName, accessToken) {
 
   if (!response.ok) {
     await logGraphErrorResponse(response, `distribution list lookup for "${displayName}"`);
-    return null;
+    return [];
   }
 
   const payload = await response.json();
   const matches = payload.value || [];
-  return matches.length > 0 ? matches[0].id : null;
+  return matches.map((match) => match.id);
 }
 
 /**
