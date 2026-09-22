@@ -13,6 +13,12 @@ const getUserDataButton = document.getElementById("getUserData");
 const getUserFilesButton = document.getElementById("getUserFiles");
 const getSharedMailboxMessagesButton = document.getElementById("getSharedMailboxMessages");
 const saveDraftAndGetViaGraphButton = document.getElementById("saveDraftAndGetViaGraph");
+const listDistributionListsButton = document.getElementById("listDistributionLists");
+const distributionListContainerElement = document.getElementById("distributionListContainer");
+const distributionListSelectElement = document.getElementById("distributionListSelect");
+const expandDistributionListButton = document.getElementById("expandDistributionList");
+const distributionListMembersContainerElement = document.getElementById("distributionListMembersContainer");
+const distributionListMembersElement = document.getElementById("distributionListMembers");
 const sharedMailboxAddressElement = document.getElementById("sharedMailboxAddress");
 const tenantIdElement = document.getElementById("entraTenantId");
 const appIdElement = document.getElementById("entraAppId");
@@ -47,6 +53,15 @@ Office.onReady((info) => {
     }
     if (saveDraftAndGetViaGraphButton) {
       saveDraftAndGetViaGraphButton.onclick = saveDraftAndGetViaGraph;
+    }
+    if (listDistributionListsButton) {
+      listDistributionListsButton.onclick = listDistributionLists;
+    }
+    if (distributionListSelectElement) {
+      distributionListSelectElement.onchange = updateExpandDistributionListButtonState;
+    }
+    if (expandDistributionListButton) {
+      expandDistributionListButton.onclick = expandDistributionList;
     }
 
 
@@ -313,6 +328,162 @@ async function logGraphErrorResponse(response, sharedMailboxAddress) {
     headers,
     body,
   });
+}
+
+/**
+ * Retrieves the personal distribution lists from the mailbox contacts (via the Graph beta
+ * distributionList resource) and populates the drop-down list with the results.
+ */
+async function listDistributionLists() {
+  try {
+    const accessToken = await accountManager.ssoGetToken(["Contacts.Read"]);
+    const distributionLists = await getDistributionLists(accessToken);
+
+    distributionListSelectElement.innerHTML = ""; // Clear previous list
+
+    if (distributionLists.length === 0) {
+      const noListsOption = document.createElement("option");
+      noListsOption.text = "No distribution lists found";
+      noListsOption.disabled = true;
+      distributionListSelectElement.appendChild(noListsOption);
+    } else {
+      distributionLists.forEach((distributionList) => {
+        const option = document.createElement("option");
+        option.value = distributionList.id;
+        option.text = distributionList.displayName || "(no name)";
+        distributionListSelectElement.appendChild(option);
+      });
+    }
+
+    if (distributionListContainerElement) {
+      distributionListContainerElement.style.visibility = "visible";
+    }
+    if (distributionListMembersContainerElement) {
+      distributionListMembersContainerElement.style.visibility = "hidden";
+    }
+    updateExpandDistributionListButtonState();
+  } catch (error) {
+    console.error("Error listing distribution lists.", error);
+  }
+}
+
+/**
+ * Calls the Microsoft Graph beta endpoint to retrieve the personal distribution lists
+ * defined in the signed-in user's mailbox contacts.
+ */
+async function getDistributionLists(accessToken) {
+  const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
+  const requestUrl = "https://graph.microsoft.com/beta/me/distributionLists?$select=id,displayName";
+
+  const response = await fetch(requestUrl, {
+    headers: { Authorization: authorizationHeader },
+  });
+
+  if (!response.ok) {
+    await logGraphErrorResponse(response, "distribution lists");
+    throw new Error(`Failed to retrieve distribution lists: ${response.statusText}`);
+  }
+
+  const payload = await response.json();
+  return payload.value || [];
+}
+
+/**
+ * Enables the "Expand List" button only when a distribution list is selected in the drop-down.
+ */
+function updateExpandDistributionListButtonState() {
+  if (!expandDistributionListButton) {
+    return;
+  }
+
+  const selectedOption = distributionListSelectElement?.selectedOptions?.[0];
+  expandDistributionListButton.disabled = !selectedOption || !selectedOption.value;
+}
+
+/**
+ * Recursively expands the selected distribution list (resolving nested distribution lists)
+ * and displays the resolved contacts in the members list box.
+ */
+async function expandDistributionList() {
+  const selectedOption = distributionListSelectElement?.selectedOptions?.[0];
+  const distributionListId = selectedOption?.value;
+  if (!distributionListId) {
+    return;
+  }
+
+  try {
+    const accessToken = await accountManager.ssoGetToken(["Contacts.Read"]);
+    const visitedDistributionListIds = new Set();
+    const contacts = await expandDistributionListMembers(distributionListId, accessToken, visitedDistributionListIds);
+
+    distributionListMembersElement.innerHTML = ""; // Clear previous list
+
+    if (contacts.length === 0) {
+      const noMembersOption = document.createElement("option");
+      noMembersOption.text = "No contacts found in this distribution list.";
+      noMembersOption.disabled = true;
+      distributionListMembersElement.appendChild(noMembersOption);
+    } else {
+      contacts.forEach((contact) => {
+        const option = document.createElement("option");
+        option.text = contact.emailAddress ? `${contact.displayName} <${contact.emailAddress}>` : contact.displayName;
+        distributionListMembersElement.appendChild(option);
+      });
+    }
+
+    if (distributionListMembersContainerElement) {
+      distributionListMembersContainerElement.style.visibility = "visible";
+    }
+  } catch (error) {
+    console.error("Error expanding distribution list.", error);
+  }
+}
+
+/**
+ * Retrieves the members of a distribution list, recursively expanding any nested (private)
+ * distribution lists, and returns a flat, de-duplicated collection of resolved contacts.
+ */
+async function expandDistributionListMembers(distributionListId, accessToken, visitedDistributionListIds, resolvedContacts = [], seenContactKeys = new Set()) {
+  if (visitedDistributionListIds.has(distributionListId)) {
+    return resolvedContacts;
+  }
+  visitedDistributionListIds.add(distributionListId);
+
+  const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
+  const requestUrl = `https://graph.microsoft.com/beta/me/distributionLists/${encodeURIComponent(distributionListId)}?$expand=members`;
+
+  const response = await fetch(requestUrl, {
+    headers: { Authorization: authorizationHeader },
+  });
+
+  if (!response.ok) {
+    await logGraphErrorResponse(response, `distribution list ${distributionListId}`);
+    throw new Error(`Failed to retrieve distribution list members: ${response.statusText}`);
+  }
+
+  const distributionList = await response.json();
+  const members = distributionList.members || [];
+
+  for (const member of members) {
+    if (member.type === "privateDL" && member.memberId) {
+      // Nested distribution list: recurse to resolve its members too.
+      await expandDistributionListMembers(member.memberId, accessToken, visitedDistributionListIds, resolvedContacts, seenContactKeys);
+      continue;
+    }
+
+    const emailAddress = member.contact?.emailAddresses?.[0]?.address;
+    const displayName = member.displayName || member.contact?.displayName || "(no name)";
+    const contactKey = member.memberId || emailAddress || displayName;
+
+    if (seenContactKeys.has(contactKey)) {
+      continue;
+    }
+    seenContactKeys.add(contactKey);
+
+    resolvedContacts.push({ displayName, emailAddress });
+  }
+
+  return resolvedContacts;
 }
 
 async function saveDraftAndGetViaGraph() {

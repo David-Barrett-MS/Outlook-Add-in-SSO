@@ -72,6 +72,28 @@
             <ul id="messageList"></ul>
         </div>
        <br>
+        <button class="Button Button--primary" id="listDistributionLists">
+            <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
+            <span class="Button-label">List Outlook Distribution Lists</span>
+            <span class="Button-description">Lists the personal distribution lists found in the mailbox contacts.</span>
+        </button>
+        <div id="distributionListContainer" style="visibility: hidden; width:100%;">
+            <div class="ms-TextField">
+                <label class="ms-Label" style="padding-bottom: 10px">Distribution lists</label>
+                <select id="distributionListSelect" class="ms-TextField-field" style="width:100%;"></select>
+            </div>
+            <br>
+            <button class="Button Button--primary" id="expandDistributionList" disabled>
+                <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
+                <span class="Button-label">Expand List</span>
+                <span class="Button-description">Recursively expands the selected distribution list and lists all resolved contacts.</span>
+            </button>
+            <div id="distributionListMembersContainer" style="visibility: hidden; width:100%;">
+                <label>Distribution list members:</label>
+                <select id="distributionListMembers" multiple style="width:100%; height:150px;"></select>
+            </div>
+        </div>
+       <br>
         <button class="Button Button--primary" id="saveDraftAndGetViaGraph">
             <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
             <span class="Button-label">Save draft and get via Graph</span>
