@@ -106,6 +106,15 @@
             <span><strong>Subject:</strong> </span><span id="resultItemSubject"></span><br>
         </div>
         <br>
+        <button class="Button Button--primary" id="expandRecipients">
+            <span class="Button-icon"><i class="ms-Icon ms-Icon--plus"></i></span>
+            <span class="Button-label">Expand Recipients</span>
+            <span class="Button-description">Retrieves the current item's recipients and expands any personal distribution lists via Graph.</span>
+        </button>
+        <div id="expandedRecipientsContainer" style="visibility: hidden; width:100%;">
+            <label>Expanded recipients:</label>
+            <select id="expandedRecipientsList" multiple style="width:100%; height:150px;"></select>
+        </div>
 
         <br>
         <h3>Application Configuration</h3>

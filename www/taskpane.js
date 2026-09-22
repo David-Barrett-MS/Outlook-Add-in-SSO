@@ -19,6 +19,9 @@ const distributionListSelectElement = document.getElementById("distributionListS
 const expandDistributionListButton = document.getElementById("expandDistributionList");
 const distributionListMembersContainerElement = document.getElementById("distributionListMembersContainer");
 const distributionListMembersElement = document.getElementById("distributionListMembers");
+const expandRecipientsButton = document.getElementById("expandRecipients");
+const expandedRecipientsContainerElement = document.getElementById("expandedRecipientsContainer");
+const expandedRecipientsListElement = document.getElementById("expandedRecipientsList");
 const sharedMailboxAddressElement = document.getElementById("sharedMailboxAddress");
 const tenantIdElement = document.getElementById("entraTenantId");
 const appIdElement = document.getElementById("entraAppId");
@@ -62,6 +65,9 @@ Office.onReady((info) => {
     }
     if (expandDistributionListButton) {
       expandDistributionListButton.onclick = expandDistributionList;
+    }
+    if (expandRecipientsButton) {
+      expandRecipientsButton.onclick = expandRecipients;
     }
 
 
@@ -484,6 +490,129 @@ async function expandDistributionListMembers(distributionListId, accessToken, vi
   }
 
   return resolvedContacts;
+}
+
+/**
+ * Retrieves the current item's To/Cc/Bcc recipients via Office.js, expands any personal
+ * distribution list recipients via Graph (recursively resolving nested lists), and displays
+ * the flattened, de-duplicated set of contacts in the recipients list box.
+ */
+async function expandRecipients() {
+  try {
+    const mailboxItem = Office.context.mailbox?.item;
+    if (!mailboxItem) {
+      throw new Error("No item is currently open.");
+    }
+
+    const [toRecipients, ccRecipients, bccRecipients] = await Promise.all([
+      getRecipientsAsync(mailboxItem.to),
+      getRecipientsAsync(mailboxItem.cc),
+      getRecipientsAsync(mailboxItem.bcc),
+    ]);
+    const allRecipients = [...toRecipients, ...ccRecipients, ...bccRecipients];
+
+    const accessToken = await accountManager.ssoGetToken(["Contacts.Read"]);
+    const visitedDistributionListIds = new Set();
+    const seenContactKeys = new Set();
+    const expandedContacts = [];
+
+    for (const recipient of allRecipients) {
+      if (recipient.recipientType === Office.MailboxEnums.RecipientType.DistributionList) {
+        const distributionListId = await findDistributionListIdByDisplayName(recipient.displayName, accessToken);
+        if (distributionListId) {
+          await expandDistributionListMembers(distributionListId, accessToken, visitedDistributionListIds, expandedContacts, seenContactKeys);
+          continue;
+        }
+        console.warn(`Could not resolve distribution list "${recipient.displayName}" via Graph. Adding as-is.`);
+      }
+
+      addUniqueContact(expandedContacts, seenContactKeys, recipient.displayName, recipient.emailAddress);
+    }
+
+    expandedRecipientsListElement.innerHTML = ""; // Clear previous list
+
+    if (expandedContacts.length === 0) {
+      const noRecipientsOption = document.createElement("option");
+      noRecipientsOption.text = "No recipients found on this item.";
+      noRecipientsOption.disabled = true;
+      expandedRecipientsListElement.appendChild(noRecipientsOption);
+    } else {
+      expandedContacts.forEach((contact) => {
+        const option = document.createElement("option");
+        option.text = contact.emailAddress ? `${contact.displayName} <${contact.emailAddress}>` : contact.displayName;
+        expandedRecipientsListElement.appendChild(option);
+      });
+    }
+
+    if (expandedRecipientsContainerElement) {
+      expandedRecipientsContainerElement.style.visibility = "visible";
+    }
+  } catch (error) {
+    console.error("Error expanding recipients.", error);
+  }
+}
+
+/**
+ * Wraps the Office.js recipients field getAsync call (used for the to/cc/bcc fields of a
+ * compose item) in a Promise. Returns an empty array if the field isn't available.
+ */
+function getRecipientsAsync(recipientsField) {
+  return new Promise((resolve, reject) => {
+    if (!recipientsField || typeof recipientsField.getAsync !== "function") {
+      resolve([]);
+      return;
+    }
+
+    recipientsField.getAsync((result) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        resolve(result.value || []);
+        return;
+      }
+
+      reject(result.error || new Error("Failed to retrieve recipients."));
+    });
+  });
+}
+
+/**
+ * Looks up a personal distribution list's Graph id by its display name (as shown in an
+ * Office.js recipient), since Office.js does not expose the underlying Graph id directly.
+ */
+async function findDistributionListIdByDisplayName(displayName, accessToken) {
+  if (!displayName) {
+    return null;
+  }
+
+  const authorizationHeader = accessToken.startsWith("Bearer ") ? accessToken : `Bearer ${accessToken}`;
+  const escapedDisplayName = displayName.replace(/'/g, "''");
+  const filter = `displayName eq '${escapedDisplayName}'`;
+  const requestUrl = `https://graph.microsoft.com/beta/me/distributionLists?$select=id,displayName&$filter=${encodeURIComponent(filter)}`;
+
+  const response = await fetch(requestUrl, {
+    headers: { Authorization: authorizationHeader },
+  });
+
+  if (!response.ok) {
+    await logGraphErrorResponse(response, `distribution list lookup for "${displayName}"`);
+    return null;
+  }
+
+  const payload = await response.json();
+  const matches = payload.value || [];
+  return matches.length > 0 ? matches[0].id : null;
+}
+
+/**
+ * Adds a contact to the resolved list, skipping duplicates (matched by email address, falling
+ * back to display name when no email address is available).
+ */
+function addUniqueContact(contacts, seenContactKeys, displayName, emailAddress) {
+  const contactKey = emailAddress || displayName;
+  if (seenContactKeys.has(contactKey)) {
+    return;
+  }
+  seenContactKeys.add(contactKey);
+  contacts.push({ displayName: displayName || "(no name)", emailAddress });
 }
 
 async function saveDraftAndGetViaGraph() {
